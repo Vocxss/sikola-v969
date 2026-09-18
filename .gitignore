@@ -28,10 +28,17 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+<<<<<<< HEAD
 .pnpm-debug.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+=======
+
+# local env files
+.env*.local
+.env
+>>>>>>> 4abb77abf0dd339d0b1e85939b0538d97862a9b6
 
 # vercel
 .vercel
@@ -39,6 +46,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+<<<<<<< HEAD
 node_modules/
 dist/
 .env
+=======
+>>>>>>> 4abb77abf0dd339d0b1e85939b0538d97862a9b6
