@@ -1,21 +1,209 @@
 // use prisma-8
-
-model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  username  String?
-  name      String?
-  posts     Post[]
-  createdAt TimestamptzString @default(now())
-  updatedAt temporal.updatedAtString()
+enum ROLE {
+  STUDENT
+  LECTURER
+  ADMIN
 }
 
-model Post {
-  id        Int      @id @default(autoincrement())
+enum SEMESTER {
+  GANJIL
+  GENAP
+}
+
+enum STATUS {
+  INACTIVE
+  PENDING
+  ACTIVE
+}
+
+enum SUBMISSION_STATUS {
+  DRAFT
+  SUBMITTED
+  GRADED
+  RETURNED
+}
+
+enum QUESTION_TYPE {
+  MULTIPLE_CHOICE
+  TRUE_FALSE
+  ESSAY
+}
+
+model Account {
+  id       String @id @default(cuid(2))
+  userId   String
+  email    String @unique
+  password String
+  role     ROLE   @default(STUDENT)
+  user     User   @relation(fields:[userId], references:[id])
+}
+
+model User {
+  id          String               @id @default(cuid(2))
+  name        String
+  avatarUrl   String?
+  status      STATUS               @default(ACTIVE)
+  enrollments Enrollment[]
+  submissions Submission[]
+  quizAnswers QuizAnswer[]
+  createdAt   DateTime             @default(now())
+  updatedAt   temporal.updatedAt()
+  accounts    Account[]
+}
+
+model Class {
+  id          String               @id @default(cuid(2))
+  title       String
+  description String?
+  semester    SEMESTER
+  year        Int
+  enrollments Enrollment[]
+  courses     Course[]
+  createdAt   DateTime             @default(now())
+  updatedAt   temporal.updatedAt()
+  accessedAt  DateTime             @default(now())
+
+  @@index([accessedAt])
+}
+
+model Enrollment {
+  id        String               @id @default(cuid(2))
+  userId    String
+  classId   String
+  progress  Int                  @default(0)
+  createdAt DateTime             @default(now())
+  updatedAt temporal.updatedAt()
+
+  user      User                 @relation(fields:[userId], references:[id], onDelete: Cascade)
+  class     Class                @relation(fields:[classId], references:[id], onDelete: Cascade)
+
+  @@unique([userId, classId])
+  @@index([userId, classId])
+}
+
+model Course {
+  id          String               @id @default(cuid(2))
+  classId     String
+  title       String
+  description String?
+  order       Int                  @default(0)
+  materials   Material[]
+  assignments Assignment[]
+  quizzes     Quiz[]
+  createdAt   DateTime             @default(now())
+  updatedAt   temporal.updatedAt()
+  accessedAt  DateTime             @default(now())
+
+  class       Class                @relation(fields:[classId], references:[id], onDelete: Cascade)
+
+  @@index([classId])
+  @@index([accessedAt])
+}
+
+model Material {
+  id        String               @id @default(cuid(2))
+  courseId  String
   title     String
   content   String?
-  author    User     @relation(fields: [authorId], references: [id])
-  authorId  Int
-  createdAt TimestamptzString @default(now())
-  updatedAt temporal.updatedAtString()
+  fileUrl   String?
+  order     Int                  @default(0)
+  createdAt DateTime             @default(now())
+  updatedAt temporal.updatedAt()
+
+  course    Course               @relation(fields:[courseId], references:[id], onDelete: Cascade)
+
+  @@index([courseId])
+}
+
+model Assignment {
+  id          String               @id @default(cuid(2))
+  courseId    String
+  title       String
+  description String?
+  dueDate     DateTime?
+  maxScore    Int                  @default(100)
+  submissions Submission[]
+  createdAt   DateTime             @default(now())
+  updatedAt   temporal.updatedAt()
+  accessedAt  DateTime             @default(now())
+
+  course      Course               @relation(fields:[courseId], references:[id], onDelete: Cascade)
+
+  @@index([courseId])
+  @@index([accessedAt])
+}
+
+model Submission {
+  id           String               @id @default(cuid(2))
+  assignmentId String
+  userId       String
+  content      String?
+  fileUrl      String?
+  score        Int?
+  status       SUBMISSION_STATUS    @default(DRAFT)
+  submittedAt  DateTime?
+  gradedAt     DateTime?
+  createdAt    DateTime             @default(now())
+  updatedAt    temporal.updatedAt()
+
+  assignment   Assignment           @relation(fields:[assignmentId], references:[id], onDelete: Cascade)
+  user         User                 @relation(fields:[userId], references:[id], onDelete: Cascade)
+
+  @@unique([assignmentId, userId])
+  @@index([assignmentId])
+  @@index([userId])
+}
+
+model Quiz {
+  id          String               @id @default(cuid(2))
+  courseId    String
+  title       String
+  description String?
+  duration    Int?
+  maxScore    Int                  @default(100)
+  questions   QuizQuestion[]
+  createdAt   DateTime             @default(now())
+  updatedAt   temporal.updatedAt()
+  accessedAt  DateTime             @default(now())
+
+  course      Course               @relation(fields:[courseId], references:[id], onDelete: Cascade)
+
+  @@index([courseId])
+  @@index([accessedAt])
+}
+
+model QuizQuestion {
+  id            String               @id @default(cuid(2))
+  quizId        String
+  question      String
+  questionType  QUESTION_TYPE        @default(MULTIPLE_CHOICE)
+  options       Json
+  correctAnswer String
+  score         Int                  @default(1)
+  order         Int                  @default(0)
+  answers       QuizAnswer[]
+  createdAt     DateTime             @default(now())
+  updatedAt     temporal.updatedAt()
+
+  quiz          Quiz                 @relation(fields:[quizId], references:[id], onDelete: Cascade)
+
+  @@index([quizId])
+}
+
+model QuizAnswer {
+  id         String               @id @default(cuid(2))
+  questionId String
+  userId     String
+  answer     String
+  isCorrect  Boolean              @default(false)
+  score      Int                  @default(0)
+  createdAt  DateTime             @default(now())
+  updatedAt  temporal.updatedAt()
+
+  question   QuizQuestion         @relation(fields:[questionId], references:[id], onDelete: Cascade)
+  user       User                 @relation(fields:[userId], references:[id], onDelete: Cascade)
+
+  @@unique([questionId, userId])
+  @@index([questionId])
+  @@index([userId])
 }
